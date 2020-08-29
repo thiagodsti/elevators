@@ -4,10 +4,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
-import java.util.Comparator;
 import java.util.Objects;
 
-public class ElevatorImpl implements Elevator, Comparable<Elevator> {
+public class ElevatorImpl implements Elevator {
 
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -16,14 +15,16 @@ public class ElevatorImpl implements Elevator, Comparable<Elevator> {
     private boolean busy;
     private int currentFloor;
     private Direction direction;
+    private final int timeBetweenFloors;
 
 
-    public ElevatorImpl(int id) {
+    public ElevatorImpl(int id, int timeBetweenFloors) {
         this.id = id;
         addressedFloor = 0;
         currentFloor = 0;
         busy = false;
         this.direction = Direction.NONE;
+        this.timeBetweenFloors = timeBetweenFloors;
     }
 
 
@@ -53,16 +54,17 @@ public class ElevatorImpl implements Elevator, Comparable<Elevator> {
                 direction = Direction.DOWN;
             } else {
                 direction = Direction.NONE;
+                busy = false;
                 return;
             }
 
 
             if (Direction.DOWN.equals(direction)) {
                 moveDown();
-                busy = false;
-                return;
+            } else {
+                moveTop();
             }
-            moveTop();
+            direction = Direction.NONE;
             busy = false;
         }
     }
@@ -91,11 +93,15 @@ public class ElevatorImpl implements Elevator, Comparable<Elevator> {
     private void timeTakenToNextFloor() {
         try {
             LOG.info("Elevator id {} moving to floor {}. Final floor {}", id, currentFloor, addressedFloor);
-            Thread.sleep(2000);
+            Thread.sleep(timeBetweenFloors);
         } catch (InterruptedException e) {
             LOG.error("Elevator stopped");
             direction = Direction.NONE;
         }
+    }
+
+    public void release() {
+        this.busy = false;
     }
 
     @Override
@@ -106,11 +112,6 @@ public class ElevatorImpl implements Elevator, Comparable<Elevator> {
     @Override
     public int currentFloor() {
         return currentFloor;
-    }
-
-    @Override
-    public int compareTo(Elevator o) {
-        return Integer.compare(currentFloor, o.currentFloor());
     }
 
     @Override
