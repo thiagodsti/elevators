@@ -1,9 +1,10 @@
 package com.tingco.codechallenge.elevator.api;
 
-import java.lang.invoke.MethodHandles;
-import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.lang.invoke.MethodHandles;
+import java.util.Objects;
 
 public class ElevatorImpl implements Elevator {
 

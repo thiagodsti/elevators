@@ -1,8 +1,12 @@
 package com.tingco.codechallenge.elevator.api;
 
 import com.tingco.codechallenge.elevator.api.Elevator.Direction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
 import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -11,10 +15,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 @Component
 public class ElevatorControllerImpl implements ElevatorController {
@@ -22,7 +22,6 @@ public class ElevatorControllerImpl implements ElevatorController {
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final List<Elevator> elevators;
-    private final List<Elevator> busyElevators;
     private final Executor executor;
     private final UserInputProvider userInputProvider;
     private final ReentrantLock lock = new ReentrantLock();
@@ -34,7 +33,6 @@ public class ElevatorControllerImpl implements ElevatorController {
         this.userInputProvider = userInputProvider;
         this.elevators = IntStream.range(0, numberOfElevators).mapToObj(i -> new ElevatorImpl(i, timeBetweenFloors)).collect(Collectors.toList());
         this.executor = executor;
-        this.busyElevators = new ArrayList<>();
     }
 
     @Override
@@ -50,8 +48,8 @@ public class ElevatorControllerImpl implements ElevatorController {
             }
             //Get available elevator nearest to the target floor
             Elevator elevator = elevators.stream()
-                .filter(e -> !e.isBusy())
-                .min(Comparator.comparingInt(c -> Math.abs(c.currentFloor() - toFloor))).get();
+                    .filter(e -> !e.isBusy())
+                    .min(Comparator.comparingInt(c -> Math.abs(c.currentFloor() - toFloor))).get();
             elevator.occupy();
             executor.execute(() -> {
                 elevator.moveElevator(toFloor);
@@ -65,7 +63,7 @@ public class ElevatorControllerImpl implements ElevatorController {
     }
 
     private boolean hasAvailableElevator() {
-        return elevators.stream().filter(e -> !e.isBusy()).findFirst().isPresent();
+        return elevators.stream().anyMatch(e -> !e.isBusy());
     }
 
     /**
@@ -96,11 +94,13 @@ public class ElevatorControllerImpl implements ElevatorController {
 
     @Override
     public void releaseElevator(Elevator elevator) {
-        if (Direction.NONE.equals(elevator.getDirection())) {
-            elevator.release();
-            stackEmpty.signalAll();
-            return;
+        if (!Direction.NONE.equals(elevator.getDirection())) {
+            throw new RuntimeException("Elevator should not be released in movement");
         }
-        throw new RuntimeException("Elevator should not be released in movement");
+
+        lock.tryLock();
+        elevator.release();
+        stackEmpty.signalAll();
+        lock.unlock();
     }
 }
