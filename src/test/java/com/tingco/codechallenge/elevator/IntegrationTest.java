@@ -1,5 +1,13 @@
 package com.tingco.codechallenge.elevator;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.when;
+
 import com.jayway.awaitility.Awaitility;
 import com.jayway.awaitility.Duration;
 import com.tingco.codechallenge.elevator.api.Elevator;
@@ -7,28 +15,16 @@ import com.tingco.codechallenge.elevator.api.ElevatorControllerImpl;
 import com.tingco.codechallenge.elevator.api.ElevatorImpl;
 import com.tingco.codechallenge.elevator.api.UserInputProvider;
 import com.tingco.codechallenge.elevator.config.ElevatorApplication;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.junit4.SpringRunner;
-
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.hasItems;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.when;
 
 /**
  * Boiler plate test class to get up and running with a test faster.
@@ -43,12 +39,12 @@ public class IntegrationTest {
     private ElevatorControllerImpl controller;
 
     @MockBean
-    private UserInputProvider userInputProvider;
+    private UserInputProvider dummyInputProvider;
 
     @Test
     @DirtiesContext
     public void simulateAnElevatorShaft() {
-        when(userInputProvider.receiveInputFromUser(anyInt())).thenReturn(Optional.empty());
+        when(dummyInputProvider.receiveInputFromUser(anyInt())).thenReturn(Optional.empty());
 
         ElevatorImpl elevator = (ElevatorImpl) controller.requestElevator(5);
         ElevatorImpl elevator1 = (ElevatorImpl) controller.requestElevator(6);
@@ -95,14 +91,14 @@ public class IntegrationTest {
     @Test
     @DirtiesContext
     public void testWithInputUser() {
-        when(userInputProvider.receiveInputFromUser(eq(0))).thenReturn(Optional.of(3));
-        when(userInputProvider.receiveInputFromUser(eq(1))).thenReturn(Optional.empty());
+        when(dummyInputProvider.receiveInputFromUser(eq(0))).thenReturn(Optional.of(3));
+        when(dummyInputProvider.receiveInputFromUser(eq(1))).thenReturn(Optional.empty());
 
         Elevator elevator = controller.requestElevator(5);
         Elevator elevator1 = controller.requestElevator(3);
 
 
-        when(userInputProvider.receiveInputFromUser(eq(2))).thenReturn(Optional.empty());
+        when(dummyInputProvider.receiveInputFromUser(eq(2))).thenReturn(Optional.empty());
         Elevator elevator2 = controller.requestElevator(10);
         Awaitility.await().timeout(Duration.ONE_MINUTE).until(() -> !elevator2.isBusy());
         Elevator elevator3 = controller.requestElevator(8);
@@ -118,7 +114,7 @@ public class IntegrationTest {
     @Test
     @DirtiesContext
     public void useAllElevators() {
-        when(userInputProvider.receiveInputFromUser(anyInt())).thenReturn(Optional.empty());
+        when(dummyInputProvider.receiveInputFromUser(anyInt())).thenReturn(Optional.empty());
         for (int i = 0; i < controller.getElevators().size() + 3; i++) {
             controller.requestElevator(3 + i);
         }

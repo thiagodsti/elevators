@@ -1,10 +1,5 @@
 package com.tingco.codechallenge.elevator.api;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,6 +12,10 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 @Component
 public class ElevatorControllerImpl implements ElevatorController {
@@ -29,7 +28,6 @@ public class ElevatorControllerImpl implements ElevatorController {
     private final UserInputProvider userInputProvider;
     private final ReentrantLock lock = new ReentrantLock();
     private final Condition stackEmpty = lock.newCondition();
-
 
     public ElevatorControllerImpl(@Value("${com.tingco.elevator.numberofelevators}") int numberOfElevators,
                                   @Value("${com.tingco.elevator.timeBetweenFloors}") int timeBetweenFloors,
