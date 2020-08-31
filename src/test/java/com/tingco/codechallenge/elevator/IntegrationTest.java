@@ -122,8 +122,8 @@ public class IntegrationTest {
         List<Elevator> elevators = controller.getElevators().stream().filter(e -> !e.isBusy()).collect(Collectors.toList());
         assertThat(elevators.isEmpty(), equalTo(true));
 
-
-        Awaitility.await().timeout(Duration.ONE_MINUTE).until(() -> controller.getElevators().stream().filter(e -> !e.isBusy()).collect(Collectors.toList()).size() == controller.getElevators().size());
+        Awaitility.await().timeout(Duration.TEN_SECONDS.multiply(2)).until(() -> controller.getElevators().stream().filter(e -> !e.isBusy()).collect(Collectors.toList()).size() == controller.getElevators().size());
+        assertThat(elevators.stream().filter(Elevator::isBusy).count(), equalTo(0L));
     }
 
 }

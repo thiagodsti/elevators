@@ -1,10 +1,9 @@
 package com.tingco.codechallenge.elevator.api;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.lang.invoke.MethodHandles;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ElevatorImpl implements Elevator {
 
@@ -17,7 +16,6 @@ public class ElevatorImpl implements Elevator {
     private Direction direction;
     private final int timeBetweenFloors;
 
-
     public ElevatorImpl(int id, int timeBetweenFloors) {
         this.id = id;
         addressedFloor = 0;
@@ -26,7 +24,6 @@ public class ElevatorImpl implements Elevator {
         this.direction = Direction.NONE;
         this.timeBetweenFloors = timeBetweenFloors;
     }
-
 
     @Override
     public Direction getDirection() {
@@ -45,28 +42,22 @@ public class ElevatorImpl implements Elevator {
 
     @Override
     public void moveElevator(int toFloor) {
-        synchronized (this) {
-            busy = true;
-            this.addressedFloor = toFloor;
-            if (currentFloor < addressedFloor) {
-                direction = Direction.UP;
-            } else if (currentFloor > addressedFloor) {
-                direction = Direction.DOWN;
-            } else {
-                direction = Direction.NONE;
-                busy = false;
-                return;
-            }
-
-
-            if (Direction.DOWN.equals(direction)) {
-                moveDown();
-            } else {
-                moveTop();
-            }
+        this.addressedFloor = toFloor;
+        if (currentFloor < addressedFloor) {
+            direction = Direction.UP;
+        } else if (currentFloor > addressedFloor) {
+            direction = Direction.DOWN;
+        } else {
             direction = Direction.NONE;
-            busy = false;
+            return;
         }
+
+        if (Direction.DOWN.equals(direction)) {
+            moveDown();
+        } else {
+            moveTop();
+        }
+        direction = Direction.NONE;
     }
 
     private void moveTop() {
@@ -100,8 +91,14 @@ public class ElevatorImpl implements Elevator {
         }
     }
 
+    @Override
     public void release() {
         this.busy = false;
+    }
+
+    @Override
+    public void occupy() {
+        this.busy = true;
     }
 
     @Override
@@ -116,8 +113,12 @@ public class ElevatorImpl implements Elevator {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         ElevatorImpl elevator = (ElevatorImpl) o;
         return id == elevator.id;
     }
