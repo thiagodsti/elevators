@@ -1,8 +1,8 @@
 package com.tingco.codechallenge.elevator.api;
 
+import com.tingco.codechallenge.elevator.api.Elevator.Direction;
+import com.tingco.codechallenge.elevator.exception.ElevatorInMovementException;
 import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -11,7 +11,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,7 +22,6 @@ public class ElevatorControllerImpl implements ElevatorController {
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final List<Elevator> elevators;
-    private final List<Elevator> busyElevators;
     private final Executor executor;
     private final UserInputProvider userInputProvider;
     private final ReentrantLock lock = new ReentrantLock();
@@ -35,14 +33,13 @@ public class ElevatorControllerImpl implements ElevatorController {
         this.userInputProvider = userInputProvider;
         this.elevators = IntStream.range(0, numberOfElevators).mapToObj(i -> new ElevatorImpl(i, timeBetweenFloors)).collect(Collectors.toList());
         this.executor = executor;
-        this.busyElevators = new ArrayList<>();
     }
 
     @Override
     public Elevator requestElevator(int toFloor) {
         try {
             lock.tryLock();
-            while (elevators.isEmpty()) {
+            if (!hasAvailableElevator()) {
                 try {
                     stackEmpty.await();
                 } catch (InterruptedException e) {
@@ -50,9 +47,10 @@ public class ElevatorControllerImpl implements ElevatorController {
                 }
             }
             //Get available elevator nearest to the target floor
-            Elevator elevator = elevators.stream().min(Comparator.comparingInt(c -> Math.abs(c.currentFloor() - toFloor))).get();
-            elevators.remove(elevator);
-            busyElevators.add(elevator);
+            Elevator elevator = elevators.stream()
+                .filter(e -> !e.isBusy())
+                .min(Comparator.comparingInt(c -> Math.abs(c.currentFloor() - toFloor))).get();
+            elevator.occupy();
             executor.execute(() -> {
                 elevator.moveElevator(toFloor);
                 waitForNextAction(elevator);
@@ -62,6 +60,10 @@ public class ElevatorControllerImpl implements ElevatorController {
             lock.unlock();
         }
 
+    }
+
+    private boolean hasAvailableElevator() {
+        return elevators.stream().anyMatch(e -> !e.isBusy());
     }
 
     /**
@@ -87,18 +89,18 @@ public class ElevatorControllerImpl implements ElevatorController {
 
     @Override
     public List<Elevator> getElevators() {
-        return Stream.of(elevators, busyElevators).flatMap(Collection::stream).collect(Collectors.toList());
+        return elevators;
     }
 
     @Override
     public void releaseElevator(Elevator elevator) {
-        try {
-            lock.tryLock();
-            elevators.add(elevator);
-            busyElevators.remove(elevator);
-            stackEmpty.signalAll();
-        } finally {
-            lock.unlock();
+        if (!Direction.NONE.equals(elevator.getDirection())) {
+            throw new ElevatorInMovementException();
         }
+
+        lock.tryLock();
+        elevator.release();
+        stackEmpty.signalAll();
+        lock.unlock();
     }
 }
