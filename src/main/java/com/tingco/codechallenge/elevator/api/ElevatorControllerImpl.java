@@ -25,7 +25,7 @@ public class ElevatorControllerImpl implements ElevatorController {
     private final Executor executor;
     private final UserInputProvider userInputProvider;
     private final ReentrantLock lock = new ReentrantLock();
-    private final Condition stackEmpty = lock.newCondition();
+    private final Condition noElevatorsAvailableCondition = lock.newCondition();
 
     public ElevatorControllerImpl(@Value("${com.tingco.elevator.numberofelevators}") int numberOfElevators,
                                   @Value("${com.tingco.elevator.timeBetweenFloors}") int timeBetweenFloors,
@@ -41,7 +41,7 @@ public class ElevatorControllerImpl implements ElevatorController {
             lock.tryLock();
             if (!hasAvailableElevator()) {
                 try {
-                    stackEmpty.await();
+                    noElevatorsAvailableCondition.await();
                 } catch (InterruptedException e) {
                     LOG.error("Interrupted", e);
                 }
@@ -100,7 +100,7 @@ public class ElevatorControllerImpl implements ElevatorController {
 
         lock.tryLock();
         elevator.release();
-        stackEmpty.signalAll();
+        noElevatorsAvailableCondition.signalAll();
         lock.unlock();
     }
 }
