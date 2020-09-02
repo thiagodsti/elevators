@@ -14,10 +14,9 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.tingco.codechallenge.elevator.api.ApiError;
 import com.tingco.codechallenge.elevator.api.Elevator;
 import com.tingco.codechallenge.elevator.api.ElevatorImpl;
+import com.tingco.codechallenge.elevator.api.ElevatorMixin;
 import com.tingco.codechallenge.elevator.config.ElevatorApplication;
 import java.util.List;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -104,7 +103,6 @@ public class ElevatorControllerEndPointsTest {
         assertThat(response.getStatus(), equalTo(200));
 
         configureMapper();
-
         Elevator elevator = mapper.readValue(response.getContentAsString(), Elevator.class);
         response = mockMvc.perform(put("/rest/v1/elevators/{elevatorId}/release", elevator.getId()))
             .andReturn().getResponse();
@@ -119,6 +117,7 @@ public class ElevatorControllerEndPointsTest {
         resolver.addMapping(Elevator.class, ElevatorImpl.class);
         module.setAbstractTypes(resolver);
         mapper.registerModule(module);
+        mapper.addMixIn(ElevatorImpl.class, ElevatorMixin.class);
     }
 
 }

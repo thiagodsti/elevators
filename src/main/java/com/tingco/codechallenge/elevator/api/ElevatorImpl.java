@@ -1,8 +1,5 @@
 package com.tingco.codechallenge.elevator.api;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
 import java.lang.invoke.MethodHandles;
 import java.util.Objects;
 import org.slf4j.Logger;
@@ -19,13 +16,15 @@ public class ElevatorImpl implements Elevator {
     private Direction direction;
     private final int timeBetweenFloors;
 
-    @JsonCreator
-    public ElevatorImpl(@JsonProperty("id") int id,
-                        @JsonProperty("addressedFloor") int addressedFloor,
-                        @JsonProperty("busy") boolean busy,
-                        @JsonProperty("currentFloor") int currentFloor,
-                        @JsonProperty("direction") Direction direction,
-                        @JsonProperty("timeBetweenFloors") int timeBetweenFloors) {
+    /**
+     * Used only by @{link ElevatorMixin}.
+     */
+    private ElevatorImpl(int id,
+                         int addressedFloor,
+                         boolean busy,
+                         int currentFloor,
+                         Direction direction,
+                         int timeBetweenFloors) {
         this.id = id;
         this.addressedFloor = addressedFloor;
         this.busy = busy;
